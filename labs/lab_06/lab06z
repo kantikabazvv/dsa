@@ -1,0 +1,109 @@
+class HashTableOpenAddressing:
+    
+    def __init__(self, size=10):
+        self.size = size
+        self.table = [None] * size
+        self.count = 0
+        self.DELETED = object()  # Маркер для удаленных элементов
+    
+    def _hash(self, key, i=0):
+        return (hash(key) + i) % self.size
+    
+    def insert(self, key, value):
+        if self.load_factor() > 0.7:
+            self._rehash()
+        
+        for i in range(self.size):
+            index = self._hash(key, i)
+            
+            if self.table[index] is None or self.table[index] is self.DELETED:
+                self.table[index] = (key, value)
+                self.count += 1
+                return
+            
+            if self.table[index][0] == key:
+                self.table[index] = (key, value)
+                return
+        
+        self._rehash()
+        self.insert(key, value)
+    
+    def search(self, key):
+        for i in range(self.size):
+            index = self._hash(key, i)
+            
+            if self.table[index] is None:
+                return None
+            
+            if self.table[index] is not self.DELETED and self.table[index][0] == key:
+                return self.table[index][1]
+        
+        return None
+    
+    def delete(self, key):
+        for i in range(self.size):
+            index = self._hash(key, i)
+            
+            if self.table[index] is None:
+                return False
+            
+            if self.table[index] is not self.DELETED and self.table[index][0] == key:
+                self.table[index] = self.DELETED
+                self.count -= 1
+                return True
+        
+        return False
+    
+    def load_factor(self):
+        return self.count / self.size
+    
+    def _rehash(self):
+        old_table = self.table
+        self.size *= 2
+        self.table = [None] * self.size
+        self.count = 0
+        
+        for item in old_table:
+            if item is not None and item is not self.DELETED:
+                key, value = item
+                self.insert(key, value)
+    
+    def __str__(self):
+        result = []
+        for i, item in enumerate(self.table):
+            if item is None:
+                result.append(f"{i}: None")
+            elif item is self.DELETED:
+                result.append(f"{i}: DELETED")
+            else:
+                result.append(f"{i}: {item}")
+        return "\n".join(result)
+
+
+if __name__ == "__main__":
+    print("ЗАДАНИЕ 2: ХЕШ-ТАБЛИЦА С ОТКРЫТОЙ АДРЕСАЦИЕЙ")
+    print("=" * 50)
+    
+    ht = HashTableOpenAddressing(5)
+    
+    data = [("apple", 1), ("banana", 2), ("cherry", 3), 
+            ("date", 4), ("elderberry", 5)]
+    
+    for key, value in data:
+        ht.insert(key, value)
+        print(f"Добавлен: ({key}, {value}), коэффициент нагрузки: {ht.load_factor():.2f}")
+    
+    print(f"\nСостояние таблицы:")
+    print(ht)
+    
+    print(f"\nПоиск 'cherry': {ht.search('cherry')}")
+    print(f"Поиск 'grape': {ht.search('grape')}")
+    
+    ht.delete("banana")
+    print(f"\nПосле удаления 'banana': {ht.search('banana')}")
+    
+    ht.insert("fig", 6)
+    print(f"После добавления 'fig': {ht.search('fig')}")
+    
+    print(f"\nИтоговое состояние таблицы:")
+    print(ht)
